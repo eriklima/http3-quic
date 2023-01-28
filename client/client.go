@@ -37,7 +37,8 @@ func main() {
 	addRootCA(pool)
 
 	client := createClient(pool)
-	url := "https://localhost:3001"
+	// url := "https://localhost:3001"
+	url := "https://193.167.0.1:3001"
 	var wg sync.WaitGroup
 
 	wg.Add(loopCount)
