@@ -22,7 +22,7 @@ func setupCertPath() {
 		panic("Failed to get current frame")
 	}
 
-	certPath = path.Dir(filename)
+	certPath = path.Join(path.Dir(filename), "keys")
 }
 
 func main() {
