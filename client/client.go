@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"strconv"
 	"sync"
 
 	"github.com/lucas-clemente/quic-go/http3"
@@ -38,13 +39,14 @@ func main() {
 
 	client := createClient(pool)
 	// url := "https://localhost:3001"
-	url := "https://193.167.0.1:57832"
+	url := "https://193.167.0.1:3001"
+	// url := "https://193.167.0.1:57832"
 	// url := "https://193.167.0.2:57832"
 	var wg sync.WaitGroup
 
 	wg.Add(loopCount)
 	for loopCount > 0 {
-		go executeClient(client, url, &wg)
+		go executeClient(client, url+"/"+strconv.Itoa(loopCount), &wg)
 		loopCount--
 	}
 	wg.Wait()
