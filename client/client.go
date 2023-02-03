@@ -39,7 +39,7 @@ func main() {
 
 	client := createClient(pool)
 	// url := "https://localhost:3001"
-	url := "https://193.167.0.1:3001"
+	url := "https://193.167.0.1:4433"
 	// url := "https://193.167.0.1:57832"
 	// url := "https://193.167.0.2:57832"
 	var wg sync.WaitGroup
@@ -78,7 +78,7 @@ func addRootCA(certPool *x509.CertPool) {
 func createClient(pool *x509.CertPool) *http.Client {
 	tlsConfig := &tls.Config{
 		RootCAs:            pool,
-		InsecureSkipVerify: false,
+		InsecureSkipVerify: true,
 		// KeyLogWriter: ,
 	}
 

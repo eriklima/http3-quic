@@ -27,7 +27,7 @@ func setupCertPath() {
 
 func main() {
 	// addr := "localhost:3001"
-	addr := "0.0.0.0:3001"
+	addr := "0.0.0.0:4433"
 	// addr := "193.167.100.100:3001"
 	var wg sync.WaitGroup
 
