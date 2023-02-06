@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 	"path"
@@ -26,13 +27,13 @@ func setupCertPath() {
 }
 
 func main() {
-	// addr := "localhost:3001"
-	addr := "0.0.0.0:4433"
-	// addr := "193.167.100.100:3001"
+	addr := flag.String("addr", "localhost:4433", "Server listening to IP:PORT")
+	flag.Parse()
+
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	go startServer(addr, &wg)
+	go startServer(*addr, &wg)
 	wg.Wait()
 
 	fmt.Println("Server finished")
@@ -49,14 +50,13 @@ func startServer(addr string, wg *sync.WaitGroup) {
 	}
 
 	pem, key := getCertificatePaths()
-	fmt.Println(pem, key)
+
+	fmt.Printf("Server listening on %s\n", addr)
 
 	err := server.ListenAndServeTLS(pem, key)
 
 	if err != nil {
 		fmt.Printf("Server error: %s\n", err)
-	} else {
-		fmt.Println("Server OK")
 	}
 }
 

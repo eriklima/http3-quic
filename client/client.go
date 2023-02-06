@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"crypto/x509"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -34,19 +35,20 @@ func setupCertPath() {
 }
 
 func main() {
+	url := flag.String("url", "localhost:4433", "IP:PORT for HTTP3 server")
+	flag.Parse()
+
 	pool := getCertPool()
 	addRootCA(pool)
 
 	client := createClient(pool)
-	// url := "https://localhost:3001"
-	url := "https://193.167.0.1:4433"
-	// url := "https://193.167.0.1:57832"
-	// url := "https://193.167.0.2:57832"
+
 	var wg sync.WaitGroup
 
 	wg.Add(loopCount)
 	for loopCount > 0 {
-		go executeClient(client, url+"/"+strconv.Itoa(loopCount), &wg)
+		completedUrl := "https://" + *url + "/" + strconv.Itoa(loopCount)
+		go executeClient(client, completedUrl, &wg)
 		loopCount--
 	}
 	wg.Wait()
