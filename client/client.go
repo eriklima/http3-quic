@@ -45,10 +45,12 @@ func main() {
 
 	var wg sync.WaitGroup
 
+	completedUrl := "https://" + *url
+
 	wg.Add(loopCount)
 	for loopCount > 0 {
-		completedUrl := "https://" + *url + "/" + strconv.Itoa(loopCount)
-		go executeClient(client, completedUrl, &wg)
+		fmt.Printf("Call %s/%d \n", completedUrl, loopCount)
+		go executeClient(client, completedUrl+"/"+strconv.Itoa(loopCount), &wg)
 		loopCount--
 	}
 	wg.Wait()
