@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/tls"
 	"crypto/x509"
@@ -15,7 +16,12 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/lucas-clemente/quic-go/http3"
+	"github.com/eriklima/http3-quic/utils"
+
+	"github.com/quic-go/quic-go"
+	"github.com/quic-go/quic-go/http3"
+	"github.com/quic-go/quic-go/logging"
+	"github.com/quic-go/quic-go/qlog"
 )
 
 var certPath string
@@ -36,12 +42,13 @@ func setupCertPath() {
 
 func main() {
 	url := flag.String("url", "localhost:4433", "IP:PORT for HTTP3 server")
+	qlog := flag.Bool("qlog", false, "output a qlog (in the same directory)")
 	flag.Parse()
 
 	pool := getCertPool()
 	addRootCA(pool)
 
-	client := createClient(pool)
+	client := createClient(pool, *qlog)
 
 	var wg sync.WaitGroup
 
@@ -79,16 +86,18 @@ func addRootCA(certPool *x509.CertPool) {
 	}
 }
 
-func createClient(pool *x509.CertPool) *http.Client {
+func createClient(pool *x509.CertPool, enableQlog bool) *http.Client {
 	tlsConfig := &tls.Config{
 		RootCAs:            pool,
 		InsecureSkipVerify: true,
 		// KeyLogWriter: ,
 	}
 
+	quicConfig := setupQuicConfig(enableQlog)
+
 	roundTripper := &http3.RoundTripper{
 		TLSClientConfig: tlsConfig,
-		QuicConfig:      nil,
+		QuicConfig:      quicConfig,
 	}
 
 	defer roundTripper.Close()
@@ -98,6 +107,26 @@ func createClient(pool *x509.CertPool) *http.Client {
 	}
 
 	return hclient
+}
+
+func setupQuicConfig(enableQlog bool) *quic.Config {
+	config := &quic.Config{}
+
+	if enableQlog {
+		config.Tracer = qlog.NewTracer(func(_ logging.Perspective, connID []byte) io.WriteCloser {
+			filename := fmt.Sprintf("client_%x.qlog", connID)
+			f, err := os.Create(filename)
+			if err != nil {
+				log.Fatal(err)
+			}
+			log.Printf("Creating qlog file %s.\n", filename)
+			return utils.NewBufferedWriteCloser(bufio.NewWriter(f), f)
+		})
+
+		fmt.Println("Qlog enabled!")
+	}
+
+	return config
 }
 
 func executeClient(client *http.Client, url string, wg *sync.WaitGroup) {

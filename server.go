@@ -1,14 +1,23 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
+	"os"
 	"path"
 	"runtime"
 	"sync"
 
-	"github.com/lucas-clemente/quic-go/http3"
+	"github.com/eriklima/http3-quic/utils"
+
+	"github.com/quic-go/quic-go"
+	"github.com/quic-go/quic-go/http3"
+	"github.com/quic-go/quic-go/logging"
+	"github.com/quic-go/quic-go/qlog"
 )
 
 var certPath string
@@ -28,25 +37,28 @@ func setupCertPath() {
 
 func main() {
 	addr := flag.String("addr", "localhost:4433", "Server listening to IP:PORT")
+	qlog := flag.Bool("qlog", false, "output a qlog (in the same directory)")
 	flag.Parse()
 
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	go startServer(*addr, &wg)
+	go startServer(*addr, *qlog, &wg)
 	wg.Wait()
 
 	fmt.Println("Server finished")
 }
 
-func startServer(addr string, wg *sync.WaitGroup) {
+func startServer(addr string, enableQlog bool, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	handler := setupHandler()
+	quicConf := setupQuicConfig(enableQlog)
 
 	server := http3.Server{
-		Addr:    addr,
-		Handler: handler,
+		Addr:       addr,
+		Handler:    handler,
+		QuicConfig: quicConf,
 	}
 
 	pem, key := getCertificatePaths()
@@ -70,6 +82,26 @@ func setupHandler() http.Handler {
 	})
 
 	return mux
+}
+
+func setupQuicConfig(enableQlog bool) *quic.Config {
+	config := &quic.Config{}
+
+	if enableQlog {
+		config.Tracer = qlog.NewTracer(func(_ logging.Perspective, connID []byte) io.WriteCloser {
+			filename := fmt.Sprintf("server_%x.qlog", connID)
+			f, err := os.Create(filename)
+			if err != nil {
+				log.Fatal(err)
+			}
+			log.Printf("Creating qlog file %s.\n", filename)
+			return utils.NewBufferedWriteCloser(bufio.NewWriter(f), f)
+		})
+
+		fmt.Println("Qlog enabled!")
+	}
+
+	return config
 }
 
 func getCertificatePaths() (string, string) {
