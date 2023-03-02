@@ -114,7 +114,11 @@ func setupQuicConfig(enableQlog bool) *quic.Config {
 
 	if enableQlog {
 		config.Tracer = qlog.NewTracer(func(_ logging.Perspective, connID []byte) io.WriteCloser {
-			filename := fmt.Sprintf("client_%x.qlog", connID)
+			err := os.MkdirAll("qlog", 0666)
+			if err != nil {
+				log.Fatal(err)
+			}
+			filename := fmt.Sprintf("qlog/client_%x.qlog", connID)
 			f, err := os.Create(filename)
 			if err != nil {
 				log.Fatal(err)
