@@ -38,22 +38,23 @@ func setupCertPath() {
 func main() {
 	addr := flag.String("addr", "localhost:4433", "Server listening to IP:PORT")
 	qlog := flag.Bool("qlog", false, "output a qlog (in the same directory)")
+	qlogpath := flag.String("qlogpath", "qlog", "Custom path to save the qlog file. Require 'qlog'.")
 	flag.Parse()
 
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	go startServer(*addr, *qlog, &wg)
+	go startServer(*addr, *qlog, *qlogpath, &wg)
 	wg.Wait()
 
 	fmt.Println("Server finished")
 }
 
-func startServer(addr string, enableQlog bool, wg *sync.WaitGroup) {
+func startServer(addr string, enableQlog bool, qlogpath string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	handler := setupHandler()
-	quicConf := setupQuicConfig(enableQlog)
+	quicConf := setupQuicConfig(enableQlog, qlogpath)
 
 	server := http3.Server{
 		Addr:       addr,
@@ -84,16 +85,13 @@ func setupHandler() http.Handler {
 	return mux
 }
 
-func setupQuicConfig(enableQlog bool) *quic.Config {
+func setupQuicConfig(enableQlog bool, qlogpath string) *quic.Config {
 	config := &quic.Config{}
 
 	if enableQlog {
 		config.Tracer = qlog.NewTracer(func(_ logging.Perspective, connID []byte) io.WriteCloser {
-			err := os.MkdirAll("qlog", 0666)
-			if err != nil {
-				log.Fatal(err)
-			}
-			filename := fmt.Sprintf("qlog/server_%x.qlog", connID)
+			createQlogPath(qlogpath)
+			filename := fmt.Sprintf("%s/server_%x.qlog", qlogpath, connID)
 			f, err := os.Create(filename)
 			if err != nil {
 				log.Fatal(err)
@@ -106,6 +104,13 @@ func setupQuicConfig(enableQlog bool) *quic.Config {
 	}
 
 	return config
+}
+
+func createQlogPath(qlogPath string) {
+	err := os.MkdirAll(qlogPath, 0755)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func getCertificatePaths() (string, string) {

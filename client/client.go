@@ -42,13 +42,14 @@ func setupCertPath() {
 
 func main() {
 	url := flag.String("url", "localhost:4433", "IP:PORT for HTTP3 server")
-	qlog := flag.Bool("qlog", false, "output a qlog (in the same directory)")
+	qlog := flag.Bool("qlog", false, "Output a qlog (in the same directory)")
+	qlogpath := flag.String("qlogpath", "qlog", "Custom path to save the qlog file. Require 'qlog'.")
 	flag.Parse()
 
 	pool := getCertPool()
 	addRootCA(pool)
 
-	client := createClient(pool, *qlog)
+	client := createClient(pool, *qlog, *qlogpath)
 
 	var wg sync.WaitGroup
 
@@ -86,14 +87,14 @@ func addRootCA(certPool *x509.CertPool) {
 	}
 }
 
-func createClient(pool *x509.CertPool, enableQlog bool) *http.Client {
+func createClient(pool *x509.CertPool, enableQlog bool, qlogPath string) *http.Client {
 	tlsConfig := &tls.Config{
 		RootCAs:            pool,
 		InsecureSkipVerify: true,
 		// KeyLogWriter: ,
 	}
 
-	quicConfig := setupQuicConfig(enableQlog)
+	quicConfig := setupQuicConfig(enableQlog, qlogPath)
 
 	roundTripper := &http3.RoundTripper{
 		TLSClientConfig: tlsConfig,
@@ -109,16 +110,13 @@ func createClient(pool *x509.CertPool, enableQlog bool) *http.Client {
 	return hclient
 }
 
-func setupQuicConfig(enableQlog bool) *quic.Config {
+func setupQuicConfig(enableQlog bool, qlogPath string) *quic.Config {
 	config := &quic.Config{}
 
 	if enableQlog {
 		config.Tracer = qlog.NewTracer(func(_ logging.Perspective, connID []byte) io.WriteCloser {
-			err := os.MkdirAll("qlog", 0666)
-			if err != nil {
-				log.Fatal(err)
-			}
-			filename := fmt.Sprintf("qlog/client_%x.qlog", connID)
+			createQlogPath(qlogPath)
+			filename := fmt.Sprintf("%s/client_%x.qlog", qlogPath, connID)
 			f, err := os.Create(filename)
 			if err != nil {
 				log.Fatal(err)
@@ -131,6 +129,13 @@ func setupQuicConfig(enableQlog bool) *quic.Config {
 	}
 
 	return config
+}
+
+func createQlogPath(qlogPath string) {
+	err := os.MkdirAll(qlogPath, 0755)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func executeClient(client *http.Client, url string, wg *sync.WaitGroup) {
