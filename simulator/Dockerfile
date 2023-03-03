@@ -17,7 +17,7 @@ RUN wget https://go.dev/dl/go1.19.5.linux-amd64.tar.gz && \
 ENV PATH="/go/bin:${PATH}"
 ENV GO111MODULE=on
 
-RUN git clone -b quic-simulator https://github.com/eriklima/http3-quic.git
+RUN git clone https://github.com/eriklima/http3-quic.git
 
 WORKDIR /http3-quic
 RUN go get ./...
