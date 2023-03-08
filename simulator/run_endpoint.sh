@@ -18,7 +18,7 @@ if [ "$ROLE" == "client" ]; then
     echo "Request server HTTP3 to 193.167.100.100:4433"
     echo "Client params: $CLIENT_PARAMS"
 
-    cd client && ./client -url 193.167.100.100:4433 $CLIENT_PARAMS
+    ./client/client -url 193.167.100.100:4433 $CLIENT_PARAMS
 elif [ "$ROLE" == "server" ]; then
     # It is recommended to increase the maximum buffer size (https://github.com/quic-go/quic-go/wiki/UDP-Receive-Buffer-Size)
     # sysctl -w net.core.rmem_max=2500000
@@ -26,5 +26,5 @@ elif [ "$ROLE" == "server" ]; then
     echo "Run the server HTTP3 on 0.0.0.0:4433"
     echo "Server params: $SERVER_PARAMS"
 
-    ./server -addr 0.0.0.0:4433 $SERVER_PARAMS
+    ./server/server -addr 0.0.0.0:4433 $SERVER_PARAMS
 fi

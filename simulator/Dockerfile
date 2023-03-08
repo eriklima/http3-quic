@@ -7,7 +7,7 @@ FROM martenseemann/quic-network-simulator-endpoint:latest
 
 RUN apt-get update
 
-# download and build your QUIC implementation
+# Download and build your QUIC implementation
 RUN apt-get install -y wget tar git vim python
 
 RUN wget https://go.dev/dl/go1.19.5.linux-amd64.tar.gz && \
@@ -22,10 +22,11 @@ RUN git clone https://github.com/eriklima/http3-quic.git
 WORKDIR /http3-quic
 RUN go mod tidy
 
-RUN go build -o server ./server.go
+# Build HTTP3's client and server
 RUN go build -o client/client ./client/client.go
+RUN go build -o server/server ./server/server.go
 
-# copy run script and run it
+# Copy run script and run it
 COPY run_endpoint.sh .
 RUN chmod +x run_endpoint.sh
 ENTRYPOINT [ "./run_endpoint.sh" ]
