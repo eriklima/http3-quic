@@ -20,7 +20,10 @@ ENV GO111MODULE=on
 RUN git clone https://github.com/eriklima/http3-quic.git
 
 WORKDIR /http3-quic
-RUN go get ./...
+RUN go mod tidy
+
+RUN go build -o server ./server.go
+RUN go build -o client/client ./client/client.go
 
 # copy run script and run it
 COPY run_endpoint.sh .
