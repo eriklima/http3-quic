@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
 	"flag"
@@ -25,7 +26,7 @@ import (
 )
 
 var certPath string
-var loopCount int = 10
+var loopCount int = 1
 
 func init() {
 	setupCertPath()
@@ -43,7 +44,8 @@ func setupCertPath() {
 func main() {
 	url := flag.String("url", "localhost:4433", "IP:PORT for HTTP3 server")
 	qlog := flag.Bool("qlog", false, "Output a qlog (in the same directory)")
-	qlogpath := flag.String("qlogpath", "qlog", "Custom path to save the qlog file. Require 'qlog'.")
+	qlogpath := flag.String("qlogpath", "qlog", "Custom path to save the qlog file. Require 'qlog'")
+	bytes := flag.Int("bytes", 1024, "Number of bytes to send to the server. Default 1024")
 	flag.Parse()
 
 	pool := getCertPool()
@@ -55,10 +57,12 @@ func main() {
 
 	completedUrl := "https://" + *url
 
+	buf := createBuf(*bytes)
+
 	wg.Add(loopCount)
 	for loopCount > 0 {
 		fmt.Printf("Call %s/%d \n", completedUrl, loopCount)
-		go executeClient(client, completedUrl+"/"+strconv.Itoa(loopCount), &wg)
+		go executeClient(client, completedUrl+"/"+strconv.Itoa(loopCount), buf, &wg)
 		loopCount--
 	}
 	wg.Wait()
@@ -138,10 +142,34 @@ func createQlogPath(qlogPath string) {
 	}
 }
 
-func executeClient(client *http.Client, url string, wg *sync.WaitGroup) {
+func createBuf(size int) *[]byte {
+	buf := make([]byte, 0)
+
+	if size > 0 {
+		buf = make([]byte, size)
+
+		// Randomize the buffer
+		_, err := rand.Read(buf)
+
+		if err != nil {
+			log.Fatalf("error while generating random string: %s", err)
+		}
+	}
+
+	return &buf
+}
+
+func executeClient(client *http.Client, url string, buf *[]byte, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	response, err := client.Get(url)
+	var response *http.Response
+	var err error
+
+	if len(*buf) == 0 {
+		response, err = client.Get(url)
+	} else {
+		response, err = client.Post(url, "application/octet-stream", bytes.NewReader(*buf))
+	}
 
 	if err != nil {
 		log.Fatal("Request error: ", err)

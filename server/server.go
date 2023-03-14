@@ -77,7 +77,16 @@ func setupHandler() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("Request recebido: %s\n", r.RequestURI)
+		fmt.Printf("Request: %s\n", r.RequestURI)
+
+		// reqBody, err := io.ReadAll(r.Body)
+
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+
+		// fmt.Printf("Request: %s Body: %d\n", r.RequestURI, len(reqBody))
+
 		// w.Write([]byte(r.RequestURI))
 		w.Write([]byte(r.URL.String()))
 	})
