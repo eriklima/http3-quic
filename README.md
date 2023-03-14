@@ -12,7 +12,7 @@ Solução: https://ilhicas.com/2018/04/08/Fixing-do-you-need-insmod.html
 
 ### Comando para executar fazer o build do docker-compose:
 
-`CLIENT="quic_impl" SERVER="quic_impl" docker-compose build`
+`CLIENT="quic_impl" SERVER="quic_impl" docker-compose build [--no-cache] [--parallel]`
 
 ### Comando para executar o docker-compose:
 
