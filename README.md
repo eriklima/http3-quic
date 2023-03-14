@@ -20,11 +20,11 @@ Solução: https://ilhicas.com/2018/04/08/Fixing-do-you-need-insmod.html
 
 ### Comando para executar o docker-compose com parâmetros:
 
-`CLIENT="quic_impl" \
-CLIENT_PARAMS="-qlog -qlogpath "/logs/qlog" -bytes 10000000" \
-SERVER="quic_impl" \
-SERVER_PARAMS="-qlog -qlogpath "/logs/qlog"" \
-SCENARIO="simple-p2p --delay=15ms --bandwidth=10Mbps --queue=25" \
+`CLIENT="quic_impl" 
+CLIENT_PARAMS="-qlog -qlogpath="/logs/qlog" -parallel=10 -bytes=10000000" 
+SERVER="quic_impl" 
+SERVER_PARAMS="-qlog -qlogpath="/logs/qlog"" 
+SCENARIO="simple-p2p --delay=15ms --bandwidth=10Mbps --queue=25" 
 docker-compose up`
 
 ## Visualisar logs QLog

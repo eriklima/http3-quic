@@ -45,7 +45,8 @@ func main() {
 	url := flag.String("url", "localhost:4433", "IP:PORT for HTTP3 server")
 	qlog := flag.Bool("qlog", false, "Output a qlog (in the same directory)")
 	qlogpath := flag.String("qlogpath", "qlog", "Custom path to save the qlog file. Require 'qlog'")
-	bytes := flag.Int("bytes", 1024, "Number of bytes to send to the server. Default 1024")
+	bytes := flag.Int("bytes", 1024, "Number of bytes to send to the server")
+	parallel := flag.Int("parallel", 1, "Number of parallel requests")
 	flag.Parse()
 
 	pool := getCertPool()
@@ -58,6 +59,8 @@ func main() {
 	completedUrl := "https://" + *url
 
 	buf := createBuf(*bytes)
+
+	loopCount = *parallel
 
 	wg.Add(loopCount)
 	for loopCount > 0 {
